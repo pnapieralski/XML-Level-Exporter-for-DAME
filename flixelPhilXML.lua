@@ -150,19 +150,18 @@ if exportOnlyXML == false then
     end
     classes = split(classText, ",");
     
-    
-    -- remove duplicate sprites
+    -- for each unique sprite class, create an else if to handle it
     flags = {}
-    uniqueClasses = {} -- push unique classes here
     createObjectsString = ""
     for i=1, #classes do
         if not flags[classes[i]] and classes[i] ~= "Player" then
-            --table.insert(uniqueClasses, classes[i])
             class = classes[i]
             
-            createObjectsString = createObjectsString.." else if (tilemapElement.name() == \""..class.."\") {\
+            createObjectsString = createObjectsString.." else if (element.name() == \""..class.."\") {\
                     var sprite:"..class.." = new "..class.."();\
-                    for each( var attr:XML in tilemapElement.attributes() ) {\n"..tab5..tab1.."sprite".."[attr.name()] = parseInt(attr);\
+                    for each( attr in element.attributes() ) {\
+                        if( attr.name() == \"x\" ) sprite.x = parseInt(attr);\
+                        if( attr.name() == \"y\" ) sprite.y = parseInt(attr);\
                     }\
                     sprites.add(sprite);\
                 }"
@@ -208,13 +207,12 @@ package\
                 loader.addEventListener(Event.COMPLETE, loadXml);\
                 loader.load(new URLRequest(xmlFile));\
                 \
-                add(hitTilemaps);\
                 add(tilemaps);\
+                add(hitTilemaps);\
                 \
                 add(triggers);\
                 add(sprites);\
                 \
-                FlxG.camera.setBounds(boundsMinX, boundsMinY, boundsMaxX, boundsMaxY);\
         }\
         \
         private function loadXml(e:Event):void {\
@@ -233,7 +231,12 @@ package\
                     boundsMaxY = parseInt(attr);\
                 }\
             }\
-            \
+            FlxG.camera.setBounds(boundsMinX, boundsMinY, boundsMaxX, boundsMaxY);\
+            // For collision detection\
+            FlxG.worldBounds.x = boundsMinX;\
+			FlxG.worldBounds.y = boundsMinY;\
+			FlxG.worldBounds.width = boundsMaxX - boundsMinX;\
+			FlxG.worldBounds.height = boundsMaxY - boundsMinY;\
             parseTilemaps(xml);\
             parseObjects(xml);\
             parseTriggers(xml);\
@@ -252,7 +255,10 @@ package\
                 tilemaps.add(tilemap);\
                 \
                 for each( var tilemapAttr:XML in tilemapElement.attributes() ) {\
-                    tilemap[tilemapAttr.name()] = parseFloat(tilemapAttr); \
+                    if( tilemapAttr.name() == \"scrollFactorX\" ) \
+                        tilemap.scrollFactor.x = parseFloat(tilemapAttr);\
+                    else if( tilemapAttr.name() == \"scrollFactorY\" )\
+                        tilemap.scrollFactor.y = parseFloat(tilemapAttr);\
                 }\
             }\
             \
@@ -264,45 +270,33 @@ package\
                 \
                 tilemap.loadMap(tilemapElement, Assets.tileset, 16, 16);\
                 \
-                for each( var tilemapAttr:XML in tilemapElement.attributes() ) {\
-                    tilemap[tilemapAttr.name()] = parseFloat(tilemapAttr); \
+                for each( tilemapAttr in tilemapElement.attributes() ) {\
+                    if( tilemapAttr.name() == \"scrollFactorX\" ) \
+                        tilemap.scrollFactor.x = parseFloat(tilemapAttr);\
+                    else if( tilemapAttr.name() == \"scrollFactorY\" )\
+                        tilemap.scrollFactor.y = parseFloat(tilemapAttr);\
                 }\
                 hitTilemaps.add(tilemap);\
             }\
         }\
         \
         private function parseObjects(xml:XML):void {\
-            for each( var tilemapElement:XML in xml.objects ) {\
-                    \
+            for each( var element:XML in xml.objects.children() ) {\
                 // Setup player\
-                if ( tilemapElement.name() == \"Player\" ) {\
-                    for each( var attr:XML in tilemapElement.attributes() ) {\
-                        "..playerInstanceName.."[attr.name()] = parseInt(attr);\
+                if ( element.name() == \"Player\" ) {\
+                    for each( var attr:XML in element.attributes() ) {\
+						if ( attr.name() == \"x\" || attr.name() == \"X\" ) {\
+							"..playerInstanceName..".x = parseInt(attr);\
+						} else if ( attr.name() == \"y\" || attr.name() == \"Y\" ) {\
+							"..playerInstanceName..".y = parseInt(attr);\
+						}\
                     }\
-                } "..createObjectsString.." \
+                }  "..createObjectsString.."\
             }\
         }\
         \
         private function parseTriggers(xml:XML):void {\
             trace(xml.triggers);\
-        }\
-\
-        public function addTilemap( mapClass:Class, imageClass:Class, x:Number, y:Number,\ tileWidth:uint, tileHeight:uint, scrollX:Number, scrollY:Number, hits:Boolean, collideIdx:uint,\ drawIdx:uint, properties:Array, onAddCallback:Function = null ):FlxTilemap\
-        {\
-            var map:FlxTilemap = new FlxTilemap;\
-            map.collideIndex = collideIdx;\
-            map.drawIndex = drawIdx;\
-            map.loadMap( new mapClass, imageClass, tileWidth, tileHeight );\
-            map.x = x;\
-            map.y = y;\
-            map.scrollFactor.x = scrollX;\
-            map.scrollFactor.y = scrollY;\
-            if ( hits )\
-                hitTilemaps.add(map);\
-            tilemaps.add(map);\
-            if(onAddCallback != null)\
-                onAddCallback(map, null, this, properties);\
-            return map;\
         }\
 \
         override public function destroy():void\

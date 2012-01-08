@@ -1,4 +1,5 @@
 XML/Level exporter for DAME
+===========================
 
 Using
 -----
@@ -16,7 +17,9 @@ Output of export script
 To load the level
 -----------------
 As an example, here is my playState:
+
 <as>
+
 	public class PlayState extends FlxState {
 		override public function create():void {
 			super.create();
@@ -32,6 +35,7 @@ As an example, here is my playState:
 			
 		}
 	}
+    
 </as>
 
 

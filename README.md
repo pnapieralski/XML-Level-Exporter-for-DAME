@@ -41,4 +41,4 @@ As an example, here is my playState:
 
 DAME
 ----
-Find DAME here (Created by Charles Goatley, who is basically the man) - http://www.dambots.com
+Find DAME here (Created by Charles Goatley)
